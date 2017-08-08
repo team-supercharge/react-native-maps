@@ -35,6 +35,7 @@ import MapStyle from './examples/MapStyle';
 import LegalLabel from './examples/LegalLabel';
 import SetNativePropsOverlays from './examples/SetNativePropsOverlays';
 import CustomOverlay from './examples/CustomOverlay';
+import GroundOverlay from './examples/GroundOverlay';
 import BugMarkerWontUpdate from './examples/BugMarkerWontUpdate';
 
 const IOS = Platform.OS === 'ios';
@@ -129,6 +130,7 @@ class App extends React.Component {
       [EventListener, 'Events', true, '(incomplete)'],
       [MarkerTypes, 'Image Based Markers', true],
       [DraggableMarkers, 'Draggable Markers', true],
+      [GroundOverlay, 'Ground Overlay', true],
       [PolygonCreator, 'Polygon Creator', true],
       [PolylineCreator, 'Polyline Creator', true],
       [AnimatedViews, 'Animating with MapViews'],
