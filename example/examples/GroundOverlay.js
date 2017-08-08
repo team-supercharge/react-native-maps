@@ -3,8 +3,12 @@ import {
   StyleSheet,
   View,
   Dimensions,
+  Text,
+  TouchableOpacity,
 } from 'react-native';
+
 import MapView from 'react-native-maps';
+import stripedCircleImg from './assets/stripped_oval.png';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,11 +29,16 @@ class GroundOverlay extends React.Component {
         latitudeDelta: LATITUDE_DELTA,
         longitudeDelta: LONGITUDE_DELTA,
       },
-      coordinate: {
-        longitude: -74.22655,
-        latitude: 40.712216,
-      },
-      image: 'flag-blue',
+      coordinates: [
+              {
+                latitude: 47.495722,
+                longitude: 19.058050,
+              },
+              {
+                              latitude: 47.494236,
+                              longitude: 19.055797,
+                            },
+            ],
     };
   }
 
@@ -40,9 +49,11 @@ class GroundOverlay extends React.Component {
           provider={this.props.provider}
           style={styles.map}
           rotateEnabled={false}
-          initialRegion={this.state.region}
-        >
-          <MapView.GroundOverlay coordinate={this.state.coordinate} image={this.state.image} />
+          initialRegion={this.state.region}>
+          <MapView.GroundOverlay
+            northeastCoordinate={this.state.coordinates[0]}
+            southwestCoordinate={this.state.coordinates[1]}
+            image={stripedCircleImg} />
         </MapView>
       </View>
     );

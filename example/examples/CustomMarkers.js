@@ -55,9 +55,9 @@ class CustomMarkers extends React.Component {
           provider={this.props.provider}
           style={styles.map}
           initialRegion={this.state.region}
-          onPress={this.onMapPress}
-        >
+          onPress={this.onMapPress}>
           {this.state.markers.map(marker => (
+
             <MapView.Marker
               title={marker.key}
               image={flagPinkImg}
