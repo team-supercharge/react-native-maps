@@ -37,6 +37,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -76,6 +77,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
 
   private final List<AirMapFeature> features = new ArrayList<>();
   private final Map<Marker, AirMapMarker> markerMap = new HashMap<>();
+  private final Map<GroundOverlay, AirMapGroundOverlay> groundOverlayMap = new HashMap<>();
   private final Map<Polyline, AirMapPolyline> polylineMap = new HashMap<>();
   private final Map<Polygon, AirMapPolygon> polygonMap = new HashMap<>();
   private final ScaleGestureDetector scaleDetector;
@@ -211,6 +213,17 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
           marker.showInfoWindow();
           return true;
         }
+      }
+    });
+
+    map.setOnGroundOverlayClickListener(new GoogleMap.OnGroundOverlayClickListener() {
+      @Override public void onGroundOverlayClick(GroundOverlay groundOverlay) {
+        WritableMap event;
+        AirMapGroundOverlay airMapGroundOverlay = groundOverlayMap.get(groundOverlay);
+
+        event = makeClickEventData(airMapGroundOverlay.getLatLngBounds());
+        event.putString("action", "ground-press");
+        manager.pushEvent(context, airMapGroundOverlay, "onPress", event);
       }
     });
 
@@ -496,8 +509,9 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     } else if (child instanceof AirMapGroundOverlay) {
       AirMapGroundOverlay groundOverlayMarker = (AirMapGroundOverlay) child;
       groundOverlayMarker.addToMap(map);
-
       features.add(index, groundOverlayMarker);
+      GroundOverlay groundOverlay = (GroundOverlay) groundOverlayMarker.getFeature();
+      groundOverlayMap.put(groundOverlay, groundOverlayMarker);
     } else {
       ViewGroup children = (ViewGroup) child;
       for (int i = 0; i < children.getChildCount(); i++) {
@@ -532,6 +546,25 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
 
     Projection projection = map.getProjection();
     Point screenPoint = projection.toScreenLocation(point);
+
+    WritableMap position = new WritableNativeMap();
+    position.putDouble("x", screenPoint.x);
+    position.putDouble("y", screenPoint.y);
+    event.putMap("position", position);
+
+    return event;
+  }
+
+  public WritableMap makeClickEventData(LatLngBounds point) {
+    WritableMap event = new WritableNativeMap();
+
+    WritableMap coordinate = new WritableNativeMap();
+    coordinate.putDouble("latitude", point.getCenter().latitude);
+    coordinate.putDouble("longitude", point.getCenter().longitude);
+    event.putMap("coordinate", coordinate);
+
+    Projection projection = map.getProjection();
+    Point screenPoint = projection.toScreenLocation(point.getCenter());
 
     WritableMap position = new WritableNativeMap();
     position.putDouble("x", screenPoint.x);
@@ -738,7 +771,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
           eventDispatcher.dispatchEvent(new RegionChangeEvent(getId(), bounds, center, true));
         }
       }
-      
+
       timerHandler.postDelayed(this, 100);
     }
   };

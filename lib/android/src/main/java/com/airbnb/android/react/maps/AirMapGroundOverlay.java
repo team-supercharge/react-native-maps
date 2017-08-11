@@ -3,7 +3,14 @@ package com.airbnb.android.react.maps;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.net.Uri;
+import android.text.TextPaint;
+import android.text.TextUtils;
+import android.util.TypedValue;
 
 import com.facebook.common.executors.UiThreadImmediateExecutorService;
 import com.facebook.common.references.CloseableReference;
@@ -30,29 +37,33 @@ public class AirMapGroundOverlay extends AirMapFeature {
   private static final String LONGITUDE = "longitude";
   private static final String LATITUDE = "latitude";
   private static final String DRAWABLE_RESOURCE_TYPE = "drawable";
+  private static final String EMPTY_STRING = "";
 
+  private Bitmap groundOverlayBitmap;
   private GroundOverlay groundOverlay;
+  private TextPaint textPaint;
+  private BitmapDescriptor iconBitmapDescriptor;
 
   private LatLng northeastCoordinate;
   private LatLng southwestCoordinate;
-  private int width;
-  private int height;
+
+  private String contentText;
 
   private float transparency;
-
   private float zIndex;
 
-  private BitmapDescriptor iconBitmapDescriptor;
-
-  private DataSource<CloseableReference<CloseableImage>> dataSource;
+  private boolean isTextDisplayed;
 
   public AirMapGroundOverlay(Context context) {
     super(context);
+
+    this.textPaint = new TextPaint();
   }
 
   @Override
   public void addToMap(GoogleMap map) {
     groundOverlay = map.addGroundOverlay(createGroundOverlayOptions());
+    groundOverlay.setClickable(true);
   }
 
   @Override
@@ -65,12 +76,64 @@ public class AirMapGroundOverlay extends AirMapFeature {
     return groundOverlay;
   }
 
-  public void setnortheastCoordinates(ReadableMap coordinate) {
+  public void setTextVisibility(boolean textVisibility) {
+    isTextDisplayed = textVisibility;
+
+    updateGroundOverlay();
+  }
+
+  public LatLngBounds getLatLngBounds() {
+    return new LatLngBounds(southwestCoordinate, northeastCoordinate);
+  }
+
+  public void setNortheastCoordinates(ReadableMap coordinate) {
     northeastCoordinate = map(coordinate);
   }
 
-  public void setsouthwestCoordinates(ReadableMap coordinate) {
+  public void setSouthwestCoordinates(ReadableMap coordinate) {
     southwestCoordinate = map(coordinate);
+  }
+
+  public void setTextSize(int textSize) {
+    textPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSize,
+        getResources().getDisplayMetrics()));
+
+    updateGroundOverlay();
+  }
+
+  public void setTextColor(String textColor) {
+    int color;
+    try {
+      color = Color.parseColor(textColor);
+    } catch (IllegalArgumentException exception) {
+      color = Color.WHITE;
+    }
+
+    textPaint.setColor(color);
+
+    updateGroundOverlay();
+  }
+
+  public void setContentText(String contentText) {
+    this.contentText = contentText;
+
+    updateGroundOverlay();
+  }
+
+  public void setTransparency(float transparency) {
+    this.transparency = transparency;
+
+    if (groundOverlay != null) {
+      groundOverlay.setTransparency(transparency);
+    }
+  }
+
+  public void setZIndex(float zIndex) {
+    this.zIndex = zIndex;
+
+    if (groundOverlay != null) {
+      groundOverlay.setZIndex(zIndex);
+    }
   }
 
   public void setImage(String uri) {
@@ -81,11 +144,17 @@ public class AirMapGroundOverlay extends AirMapFeature {
           .build();
 
       ImagePipeline imagePipeline = Fresco.getImagePipeline();
-      dataSource = imagePipeline.fetchDecodedImage(imageRequest, this);
+      DataSource<CloseableReference<CloseableImage>> dataSource =
+          imagePipeline.fetchDecodedImage(imageRequest, this);
 
       dataSource.subscribe(new BaseBitmapDataSubscriber() {
         @Override protected void onNewResultImpl(@Nullable Bitmap bitmap) {
-          iconBitmapDescriptor = BitmapDescriptorFactory.fromBitmap(bitmap);
+          if (groundOverlayBitmap != null) {
+            groundOverlayBitmap.recycle();
+          }
+          groundOverlayBitmap = Bitmap.createBitmap(bitmap);
+
+          updateGroundOverlay();
         }
 
         @Override
@@ -93,16 +162,8 @@ public class AirMapGroundOverlay extends AirMapFeature {
         }
       }, UiThreadImmediateExecutorService.getInstance());
     } else {
-      iconBitmapDescriptor = getBitmapDescriptorByName(uri);
+      loadBitmap(uri);
     }
-  }
-
-  public void setTransparency(float transparency) {
-    this.transparency = transparency;
-  }
-
-  public void setZIndex(float zIndex) {
-    this.zIndex = zIndex;
   }
 
   private LatLng map(ReadableMap coordinate) {
@@ -114,6 +175,7 @@ public class AirMapGroundOverlay extends AirMapFeature {
     groundOverlayOptions
         .positionFromBounds(new LatLngBounds(southwestCoordinate, northeastCoordinate));
 
+    drawTextOnBitmap();
     groundOverlayOptions.image(iconBitmapDescriptor);
     groundOverlayOptions.zIndex(zIndex);
     groundOverlayOptions.transparency(transparency);
@@ -128,7 +190,45 @@ public class AirMapGroundOverlay extends AirMapFeature {
         getContext().getPackageName());
   }
 
-  private BitmapDescriptor getBitmapDescriptorByName(String name) {
-    return BitmapDescriptorFactory.fromResource(getDrawableResourceByName(name));
+  private void loadBitmap(String name) {
+    BitmapFactory.Options options = new BitmapFactory.Options();
+    options.inMutable = true;
+
+    if (groundOverlayBitmap != null) {
+      groundOverlayBitmap.recycle();
+    }
+    groundOverlayBitmap =
+        BitmapFactory.decodeResource(getResources(), getDrawableResourceByName(name), options);
+
+    updateGroundOverlay();
+  }
+
+  private void updateGroundOverlay() {
+    if (groundOverlay != null && groundOverlayBitmap != null) {
+      drawTextOnBitmap();
+
+      groundOverlay.setImage(iconBitmapDescriptor);
+    }
+  }
+
+  private void drawTextOnBitmap() {
+    Bitmap mutable = getOriginalGroundOverlayBitmap();
+    if (isTextDisplayed) {
+      final String textToDisplay = TextUtils.isEmpty(contentText) ? EMPTY_STRING : contentText;
+      final Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
+      final float width = textPaint.measureText(textToDisplay);
+      final float height = Math.abs(fontMetrics.ascent);
+
+      Canvas canvas = new Canvas(mutable);
+      canvas.drawText(textToDisplay, canvas.getWidth() / 2 - width / 2,
+          canvas.getHeight() / 2 + height / 2,
+          textPaint);
+    }
+
+    iconBitmapDescriptor = BitmapDescriptorFactory.fromBitmap(mutable);
+  }
+
+  private Bitmap getOriginalGroundOverlayBitmap() {
+    return groundOverlayBitmap.copy(Bitmap.Config.ARGB_8888, true);
   }
 }
