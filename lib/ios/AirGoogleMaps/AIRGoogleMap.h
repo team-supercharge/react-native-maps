@@ -12,6 +12,8 @@
 #import "AIRGMSMarker.h"
 #import "RCTConvert+AirMap.h"
 
+@class AIRGoogleMapGroundOverlay;
+
 @interface AIRGoogleMap : GMSMapView
 
 // TODO: don't use MK region?
@@ -29,6 +31,7 @@
 @property (nonatomic, strong) NSMutableArray *polygons;
 @property (nonatomic, strong) NSMutableArray *polylines;
 @property (nonatomic, strong) NSMutableArray *circles;
+@property (nonatomic, strong) NSMutableArray *overlays;
 @property (nonatomic, strong) NSMutableArray *tiles;
 
 @property (nonatomic, assign) BOOL showsBuildings;
@@ -45,6 +48,7 @@
 - (BOOL)didTapMarker:(GMSMarker *)marker;
 - (void)didTapPolyline:(GMSPolyline *)polyline;
 - (void)didTapPolygon:(GMSPolygon *)polygon;
+- (void)didTapGroundOverlay:(GMSGroundOverlay *)overlay;
 - (void)didTapAtCoordinate:(CLLocationCoordinate2D)coordinate;
 - (void)didLongPressAtCoordinate:(CLLocationCoordinate2D)coordinate;
 - (void)didChangeCameraPosition:(GMSCameraPosition *)position;
