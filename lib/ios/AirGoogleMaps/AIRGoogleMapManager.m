@@ -20,10 +20,12 @@
 #import "AIRMapMarker.h"
 #import "AIRMapPolyline.h"
 #import "AIRMapPolygon.h"
+#import "AIRGoogleMapGroundOverlay.h"
 #import "AIRMapCircle.h"
 #import "SMCalloutView.h"
 #import "AIRGoogleMapMarker.h"
 #import "RCTConvert+AirMap.h"
+#import "AIRGMSPolygon.h"
 
 #import <MapKit/MapKit.h>
 #import <QuartzCore/QuartzCore.h>
@@ -233,9 +235,15 @@ RCT_EXPORT_METHOD(takeSnapshot:(nonnull NSNumber *)reactTag
   return [googleMapView didTapMarker:marker];
 }
 
-- (void)mapView:(GMSMapView *)mapView didTapOverlay:(GMSPolygon *)polygon {
+- (void)mapView:(GMSMapView *)mapView didTapOverlay:(GMSOverlay *)overlay {
   AIRGoogleMap *googleMapView = (AIRGoogleMap *)mapView;
-  [googleMapView didTapPolygon:polygon];
+	
+    if ([overlay isKindOfClass:[AIRGMSPolygon class]]) {
+        [googleMapView didTapPolygon:(AIRGMSPolygon *)overlay];
+	}
+	else if ([overlay isKindOfClass:[GMSGroundOverlay class]]) {
+		[googleMapView didTapGroundOverlay:(GMSGroundOverlay *)overlay];
+	}
 }
 
 - (void)mapView:(GMSMapView *)mapView didTapAtCoordinate:(CLLocationCoordinate2D)coordinate {

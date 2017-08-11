@@ -130,7 +130,7 @@ class App extends React.Component {
       [EventListener, 'Events', true, '(incomplete)'],
       [MarkerTypes, 'Image Based Markers', true],
       [DraggableMarkers, 'Draggable Markers', true],
-      [GroundOverlay, 'Ground Overlay', true],
+      [GroundOverlay, 'Ground Overlay (Google Maps only)', true],
       [PolygonCreator, 'Polygon Creator', true],
       [PolylineCreator, 'Polyline Creator', true],
       [AnimatedViews, 'Animating with MapViews'],

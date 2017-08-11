@@ -218,6 +218,7 @@ CGRect unionRect(CGRect a, CGRect b) {
                                                                  if (error) {
                                                                    // TODO(lmr): do something with the error?
                                                                    NSLog(@"%@", error);
+                                                                   return;
                                                                  }
                                                                  dispatch_async(dispatch_get_main_queue(), ^{
 

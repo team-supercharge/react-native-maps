@@ -10,11 +10,13 @@
 #import "AIRGoogleMapPolygon.h"
 #import "AIRGoogleMapPolyline.h"
 #import "AIRGoogleMapCircle.h"
+#import "AIRGoogleMapGroundOverlay.h"
 #import "AIRGoogleMapUrlTile.h"
 #import <GoogleMaps/GoogleMaps.h>
 #import <MapKit/MapKit.h>
 #import <React/UIView+React.h>
 #import "RCTConvert+AirMap.h"
+#import "AIRGMSGroundOverlay.h"
 
 id regionAsJSON(MKCoordinateRegion region) {
   return @{
@@ -45,6 +47,7 @@ id regionAsJSON(MKCoordinateRegion region) {
     _polygons = [NSMutableArray array];
     _polylines = [NSMutableArray array];
     _circles = [NSMutableArray array];
+    _overlays = [NSMutableArray array];
     _tiles = [NSMutableArray array];
     _initialRegionSet = false;
   }
@@ -87,6 +90,10 @@ id regionAsJSON(MKCoordinateRegion region) {
     AIRGoogleMapCircle *circle = (AIRGoogleMapCircle*)subview;
     circle.circle.map = self;
     [self.circles addObject:circle];
+  } else if ([subview isKindOfClass:[AIRGoogleMapGroundOverlay class]]) {
+    AIRGoogleMapGroundOverlay *groundOverlay = (AIRGoogleMapGroundOverlay*)subview;
+    groundOverlay.map = self;
+    [self.overlays addObject:groundOverlay];
   } else if ([subview isKindOfClass:[AIRGoogleMapUrlTile class]]) {
     AIRGoogleMapUrlTile *tile = (AIRGoogleMapUrlTile*)subview;
     tile.tileLayer.map = self;
@@ -123,6 +130,10 @@ id regionAsJSON(MKCoordinateRegion region) {
     AIRGoogleMapCircle *circle = (AIRGoogleMapCircle*)subview;
     circle.circle.map = nil;
     [self.circles removeObject:circle];
+  } else if ([subview isKindOfClass:[AIRGoogleMapGroundOverlay class]]) {
+    AIRGoogleMapGroundOverlay *groundOVerlay = (AIRGoogleMapGroundOverlay*)subview;
+    groundOVerlay.map = nil;
+    [self.overlays removeObject:groundOVerlay];
   } else if ([subview isKindOfClass:[AIRGoogleMapUrlTile class]]) {
     AIRGoogleMapUrlTile *tile = (AIRGoogleMapUrlTile*)subview;
     tile.tileLayer.map = nil;
@@ -192,6 +203,16 @@ id regionAsJSON(MKCoordinateRegion region) {
                  };
 
     if (airPolygon.onPress) airPolygon.onPress(event);
+}
+
+- (void)didTapGroundOverlay:(GMSGroundOverlay *)overlay {
+	AIRGMSGroundOverlay *airOverlay = (AIRGMSGroundOverlay *)overlay;
+	
+    id event = @{@"action": @"ground-overlay-press",
+                 @"id": airOverlay.identifier ?: @"unknown",
+                 };
+
+    if (airOverlay.onPress) airOverlay.onPress(event);
 }
 
 - (void)didTapAtCoordinate:(CLLocationCoordinate2D)coordinate {
