@@ -157,6 +157,11 @@
     UIImage *resultImage = UIGraphicsGetImageFromCurrentImageContext();
     _imageWithText = resultImage;
     UIGraphicsEndImageContext();
+    
+    if (self.numberShown)
+    {
+        [self showText];
+    }
 }
 
 - (void)showGroundOverlayIfPossible
