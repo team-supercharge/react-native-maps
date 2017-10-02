@@ -87,12 +87,18 @@ public class AirMapGroundOverlay extends AirMapFeature {
   }
 
   public void setNortheastCoordinates(ReadableMap coordinate) {
-    northeastCoordinate = map(coordinate);
-  }
+    northeastCoordinate = map(coordinate);
+    if (groundOverlay != null) {
+      groundOverlay.setPositionFromBounds(new LatLngBounds(southwestCoordinate, northeastCoordinate));
+    }
+  }
 
-  public void setSouthwestCoordinates(ReadableMap coordinate) {
-    southwestCoordinate = map(coordinate);
-  }
+  public void setSouthwestCoordinates(ReadableMap coordinate) {
+    southwestCoordinate = map(coordinate);
+    if (groundOverlay != null) {
+      groundOverlay.setPositionFromBounds(new LatLngBounds(southwestCoordinate, northeastCoordinate));
+    }
+  }
 
   public void setTextSize(int textSize) {
     textPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSize,
